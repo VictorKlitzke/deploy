@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model usuarios {
+  id         Int          @id @default(autoincrement())
+  nome       String
+  email      String       @unique
+  senha      String
+  criado_em  DateTime     @default(now())
+  ativo      Boolean      @default(true)
+  categorias categorias[]
+  contas     contas[]
+  transacoes transacoes[]
+  orcamentos orcamentos[]
+  metas      metas[]
+}
+
+model categorias {
+  id         Int          @id @default(autoincrement())
+  nome       String
+  tipo       String
+  criado_em  DateTime     @default(now())
+  usuario    usuarios     @relation(fields: [usuario_id], references: [id])
+  usuario_id Int
+  transacoes transacoes[]
+  orcamentos orcamentos[]
+}
+
+model contas {
+  id            Int          @id @default(autoincrement())
+  nome          String
+  saldo_inicial Float        @default(0)
+  criado_em     DateTime     @default(now())
+  usuario       usuarios     @relation(fields: [usuario_id], references: [id])
+  usuario_id    Int
+  transacoes    transacoes[]
+}
+
+model transacoes {
+  id             Int        @id @default(autoincrement())
+  usuario        usuarios   @relation(fields: [usuario_id], references: [id])
+  usuario_id     Int
+  categoria      categorias @relation(fields: [categoria_id], references: [id])
+  categoria_id   Int
+  conta          contas     @relation(fields: [conta_id], references: [id])
+  conta_id       Int
+  valor          Float
+  tipo           String
+  descricao      String?
+  data_transacao DateTime
+  criado_em      DateTime   @default(now())
+  parcelas       parcelas[]
+}
+
+model parcelas {
+  id              Int        @id @default(autoincrement())
+  transacao       transacoes @relation(fields: [transacao_id], references: [id])
+  transacao_id    Int
+  numero_parcela  Int
+  valor           Float
+  data_vencimento DateTime
+}
+
+model orcamentos {
+  id           Int        @id @default(autoincrement())
+  usuario      usuarios   @relation(fields: [usuario_id], references: [id])
+  usuario_id   Int
+  categoria    categorias @relation(fields: [categoria_id], references: [id])
+  categoria_id Int
+  valor_limite Float
+  periodo      String
+  criado_em    DateTime   @default(now())
+}
+
+model metas {
+  id          Int      @id @default(autoincrement())
+  usuario     usuarios @relation(fields: [usuario_id], references: [id])
+  usuario_id  Int
+  nome        String
+  valor_meta  Float
+  data_limite DateTime
+  valor_atual Float    @default(0)
+  criado_em   DateTime @default(now())
+}
