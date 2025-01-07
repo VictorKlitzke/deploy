@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const authRouters = require('./routers/index');
+const authRouters = require('../routers/index');
 const cookieParser = require('cookie-parser');
 
 const corsOptions = {

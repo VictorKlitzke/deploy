@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 
-const authPost = require('../controllers/post');
-const authget = require('../controllers/get');
-const authPut = require('../controllers/put');
-const authDelete = require('../controllers/delete');
+const authPost = require('../src/controllers/post');
+const authget = require('../src/controllers/get');
+const authPut = require('../src/controllers/put');
+const authDelete = require('../src/controllers/delete');
 const auth = require('../middleware/auth');
 
 router.post('/register', authPost.register);

@@ -1,6 +1,6 @@
-const pool = require("../database/index");
-const verificationCodes = require('../store/verification');
-const { verificationEmail } = require('../utils/index');
+const pool = require("../../database/index");
+const verificationCodes = require('../../store/verification');
+const { verificationEmail } = require('../../utils/index');
 const bcrypt = require("bcrypt");
 const dns = require('dns');
 require("dotenv").config();

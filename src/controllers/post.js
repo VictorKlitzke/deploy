@@ -1,5 +1,5 @@
-const pool = require("../database/index")
-const { formmater } = require("../utils/index");
+const pool = require("../../database/index")
+const { formmater } = require("../../utils/index");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();

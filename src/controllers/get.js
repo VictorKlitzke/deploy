@@ -1,4 +1,4 @@
-const pool = require("../database/index")
+const pool = require("../../database/index")
 require("dotenv").config();
 exports.getuser = async (req, res) => {
   const userId = req.user.id;
