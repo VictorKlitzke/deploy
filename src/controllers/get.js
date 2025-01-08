@@ -41,6 +41,7 @@ exports.getCategorys = (req, res) => {
 
 exports.getAccounts = (req, res) => {
   try {
+    
     const userId = req.user.id;
 
     pool.query('SELECT id, nome, saldo_inicial FROM contas WHERE usuario_id = ?', [userId], (err, result) => {
