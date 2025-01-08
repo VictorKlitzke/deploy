@@ -109,7 +109,7 @@ exports.registerCategory = async (req, res) => {
     try {
         const { rows: existingCategories } = await pool.query(
             'SELECT * FROM categorias WHERE nome = $1 AND usuario_id = $2',
-            [category, userId]
+            [category.trim(), userId]
         );
 
         if (existingCategories.length > 0) {
@@ -118,7 +118,7 @@ exports.registerCategory = async (req, res) => {
 
         const { rows } = await pool.query(
             'INSERT INTO categorias (nome, tipo, usuario_id) VALUES ($1, $2, $3) RETURNING id',
-            [category, type, userId]
+            [category.trim(), type, userId]
         );
 
         return res.status(201).json({
@@ -146,7 +146,7 @@ exports.registerAccounts = async (req, res) => {
     try {
         const { rows: existingAccounts } = await pool.query(
             'SELECT * FROM contas WHERE nome = $1 AND usuario_id = $2',
-            [account, userId]
+            [account.trim(), userId]
         );
 
         if (existingAccounts.length > 0) {
@@ -155,7 +155,7 @@ exports.registerAccounts = async (req, res) => {
 
         const { rows } = await pool.query(
             'INSERT INTO contas (nome, saldo_inicial, usuario_id) VALUES ($1, $2, $3) RETURNING id',
-            [account, balance, userId]
+            [account.trim(), balance, userId]
         );
 
         return res.status(201).json({
