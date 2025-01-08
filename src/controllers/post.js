@@ -8,42 +8,48 @@ exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        pool.query("SELECT * FROM usuarios WHERE nome = ?", [username], async (err, user) => {
-            if (err) {
-                console.error("Erro na consulta ao banco:", err.message);
-                return res.status(500).json({ error: "Erro interno no servidor" });
+        pool.query(
+            "SELECT * FROM usuarios WHERE nome = $1",
+            [username],
+            async (err, result) => {
+                if (err) {
+                    console.error("Erro na consulta ao banco:", err.message);
+                    return res.status(500).json({ error: "Erro interno no servidor" });
+                }
+
+                const user = result.rows[0]; 
+                if (!user) {
+                    return res.status(401).json({ error: "Usuário ou senha inválidos" });
+                }
+
+                user.senha = user.senha.replace("$2y$", "$2a$");
+                const isPasswordValid = await bcrypt.compare(password, user.senha);
+                if (!isPasswordValid) {
+                    return res.status(401).json({ error: "Senha incorreta" });
+                }
+
+                const token = jwt.sign({ id: user.id }, process.env.TOKEN, { expiresIn: "3h" });
+
+                res.cookie('token', token, {
+                    httpOnly: true,
+                    secure: false,
+                    sameSite: 'lax',
+                    maxAge: 18000000
+                });
+
+                return res.json({
+                    authorization: true,
+                    token: token,
+                    message: "Login realizado com sucesso",
+                    UserId: user.id
+                });
             }
-
-            if (!user) {
-                return res.status(401).json({ error: "Usuário ou senha inválidos" });
-            }
-
-            user.senha = user.senha.replace("$2y$", "$2a$");
-            const isPasswordValid = await bcrypt.compare(password, user.senha);
-            if (!isPasswordValid) {
-                return res.status(401).json({ error: "Senha incorreta" });
-            }
-            const token = jwt.sign({ id: user.id }, process.env.TOKEN, { expiresIn: "3h" });
-
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: false,
-                sameSite: 'lax',
-                maxAge: 18000000
-            });
-
-            return res.json({
-                authorization: true,
-                token: token,
-                message: "Login realizado com sucesso",
-                UserId: user.id
-            });
-        });
-
+        );
     } catch (error) {
         console.error("Erro ao realizar login:", error.message);
         return res.status(500).json({ error: "Erro interno no servidor" });
     }
+
 };
 
 exports.logout = async (req, res) => {
