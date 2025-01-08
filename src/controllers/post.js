@@ -96,7 +96,7 @@ exports.register = async (req, res) => {
     }
 };
 
-exports.registerCategory = (req, res) => {
+exports.registerCategory = async (req, res) => {
     const { category, type } = req.body;
     const userId = req.user.id;
 
@@ -107,7 +107,7 @@ exports.registerCategory = (req, res) => {
         return res.status(400).json({ error: 'ID do usuário não encontrado!' });
     }
     try {
-        const { rows: existingCategories } = pool.query(
+        const { rows: existingCategories } = await pool.query(
             'SELECT * FROM categorias WHERE nome = $1 AND usuario_id = $2',
             [category, userId]
         );
@@ -116,7 +116,7 @@ exports.registerCategory = (req, res) => {
             return res.status(400).json({ error: 'Essa categoria já existe para esse usuário' });
         }
 
-        const { rows } = pool.query(
+        const { rows } = await pool.query(
             'INSERT INTO categorias (nome, tipo, usuario_id) VALUES ($1, $2, $3) RETURNING id',
             [category, type, userId]
         );
@@ -133,7 +133,7 @@ exports.registerCategory = (req, res) => {
 
 };
 
-exports.registerAccounts = (req, res) => {
+exports.registerAccounts = async (req, res) => {
     const { account, balance } = req.body;
     const userId = req.user.id;
 
@@ -144,7 +144,7 @@ exports.registerAccounts = (req, res) => {
         return res.status(400).json({ error: 'ID do usuário não encontrado!' });
     }
     try {
-        const { rows: existingAccounts } = pool.query(
+        const { rows: existingAccounts } = await pool.query(
             'SELECT * FROM contas WHERE nome = $1 AND usuario_id = $2',
             [account, userId]
         );
@@ -153,7 +153,7 @@ exports.registerAccounts = (req, res) => {
             return res.status(400).json({ error: 'Essa conta já existe para esse usuário' });
         }
 
-        const { rows } = pool.query(
+        const { rows } = await pool.query(
             'INSERT INTO contas (nome, saldo_inicial, usuario_id) VALUES ($1, $2, $3) RETURNING id',
             [account, balance, userId]
         );
@@ -169,7 +169,7 @@ exports.registerAccounts = (req, res) => {
     }
 };
 
-exports.registerExpense = (req, res) => {
+exports.registerExpense = async (req, res) => {
     const { expense } = req.body;
 
     const { categoria_id, conta_id, valor, tipo, descricao, data_transacao } = expense;
