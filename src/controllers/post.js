@@ -17,7 +17,7 @@ exports.login = async (req, res) => {
                     return res.status(500).json({ error: "Erro interno no servidor" });
                 }
 
-                const user = result.rows[0]; 
+                const user = result.rows[0];
                 if (!user) {
                     return res.status(401).json({ error: "Usuário ou senha inválidos" });
                 }
@@ -107,27 +107,30 @@ exports.registerCategory = (req, res) => {
         return res.status(400).json({ error: 'ID do usuário não encontrado!' });
     }
     try {
+        const { rows: existingCategories } = pool.query(
+            'SELECT * FROM categorias WHERE nome = $1 AND usuario_id = $2',
+            [category, userId]
+        );
 
-        const existCategories = pool.query('SELECT * FROM categorias WHERE nome = ? AND usuario_id = ?', [category, userId]);
-        if (!existCategories) {
+        if (existingCategories.length > 0) {
             return res.status(400).json({ error: 'Essa categoria já existe para esse usuário' });
         }
 
-        pool.query('INSERT INTO categorias (nome, tipo, usuario_id) VALUES (?, ?, ?)',
-            [category, type, userId],
-            (err, result) => {
-                if (err) {
-                    console.error('Erro ao inserir categoria:', err.message);
-                    return res.status(500).json({ error: 'Erro ao criar cateegoria.' });
-                }
-                return res.status(201).json({ message: 'Categoria criado com sucesso!', userId: result.rows[0].id });
-            }
-        )
+        const { rows } = pool.query(
+            'INSERT INTO categorias (nome, tipo, usuario_id) VALUES ($1, $2, $3) RETURNING id',
+            [category, type, userId]
+        );
+
+        return res.status(201).json({
+            message: 'Categoria criada com sucesso!',
+            categoryId: rows[0].id
+        });
 
     } catch (error) {
-        console.error("Erro ao registrar categoria do usuario:", error.message);
+        console.error('Erro ao registrar categoria do usuário:', error.message);
         return res.status(500).json({ error: 'Erro interno no servidor' });
     }
+
 };
 
 exports.registerAccounts = (req, res) => {
@@ -141,25 +144,27 @@ exports.registerAccounts = (req, res) => {
         return res.status(400).json({ error: 'ID do usuário não encontrado!' });
     }
     try {
+        const { rows: existingAccounts } = pool.query(
+            'SELECT * FROM contas WHERE nome = $1 AND usuario_id = $2',
+            [account, userId]
+        );
 
-        const existCategories = pool.query('SELECT * FROM contas WHERE nome = ? AND usuario_id = ?', [account, userId]);
-        if (!existCategories) {
-            return res.status(400).json({ error: 'Essa contas já existe para esse usuário' });
+        if (existingAccounts.length > 0) {
+            return res.status(400).json({ error: 'Essa conta já existe para esse usuário' });
         }
 
-        pool.query('INSERT INTO contas (nome, saldo_inicial, usuario_id) VALUES (?, ?, ?)',
-            [account, balance, userId],
-            (err, result) => {
-                if (err) {
-                    return res.status(500).json({ message: 'Erro ao criar conta' });
+        const { rows } = pool.query(
+            'INSERT INTO contas (nome, saldo_inicial, usuario_id) VALUES ($1, $2, $3) RETURNING id',
+            [account, balance, userId]
+        );
 
-                }
-                return res.status(201).json({ message: 'Conta criada com sucesso!' });
-            }
-        )
+        return res.status(201).json({
+            message: 'Conta criada com sucesso!',
+            accountId: rows[0].id
+        });
 
     } catch (error) {
-        console.error("Erro ao registrar conta do usuario:", error.message);
+        console.error("Erro ao registrar conta do usuário:", error.message);
         return res.status(500).json({ error: 'Erro interno no servidor' });
     }
 };
