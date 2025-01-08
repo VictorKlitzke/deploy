@@ -107,23 +107,23 @@ exports.registerCategory = async (req, res) => {
         return res.status(400).json({ error: 'ID do usuário não encontrado!' });
     }
     try {
-        const { rows: existingCategories } = await pool.query(
-            'SELECT * FROM categorias WHERE nome = $1 AND usuario_id = $2',
+        const existingCategories = await pool.query(
+            'SELECT COUNT(*) FROM categorias WHERE nome = $1 AND usuario_id = $2',
             [category.trim(), userId]
         );
 
-        if (existingCategories.length > 0) {
+        if (parseInt(existingCategories.rows[0].count) > 0) {
             return res.status(400).json({ error: 'Essa categoria já existe para esse usuário' });
         }
 
-        const { rows } = await pool.query(
+        const result = await pool.query(
             'INSERT INTO categorias (nome, tipo, usuario_id) VALUES ($1, $2, $3) RETURNING id',
             [category.trim(), type, userId]
         );
 
         return res.status(201).json({
             message: 'Categoria criada com sucesso!',
-            categoryId: rows[0].id
+            categoryId: result.result[0].id
         });
 
     } catch (error) {
@@ -144,23 +144,23 @@ exports.registerAccounts = async (req, res) => {
         return res.status(400).json({ error: 'ID do usuário não encontrado!' });
     }
     try {
-        const { rows: existingAccounts } = await pool.query(
+        const  existingAccounts = await pool.query(
             'SELECT * FROM contas WHERE nome = $1 AND usuario_id = $2',
             [account.trim(), userId]
         );
 
-        if (existingAccounts.length > 0) {
-            return res.status(400).json({ error: 'Essa conta já existe para esse usuário' });
+        if (parseInt(existingAccounts.rows[0].count) > 0) {
+            return res.status(400).json({ error: 'Essa categoria já existe para esse usuário' });
         }
 
-        const { rows } = await pool.query(
+        const result = await pool.query(
             'INSERT INTO contas (nome, saldo_inicial, usuario_id) VALUES ($1, $2, $3) RETURNING id',
             [account.trim(), balance, userId]
         );
 
         return res.status(201).json({
             message: 'Conta criada com sucesso!',
-            accountId: rows[0].id
+            accountId: result[0].id
         });
 
     } catch (error) {
