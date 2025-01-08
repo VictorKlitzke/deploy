@@ -23,7 +23,7 @@ exports.updatepassword = async (req, res) => {
   }
 
   try {
-    pool.get("SELECT * FROM usuarios WHERE id = ?", [userId], async (error, user) => {
+    pool.query("SELECT * FROM usuarios WHERE id = ?", [userId], async (error, user) => {
       if (error) {
         console.error("Erro na consulta ao banco:", error.message);
         return res.status(500).json({ error: "Erro interno no servidor." });
@@ -43,7 +43,7 @@ exports.updatepassword = async (req, res) => {
       }
 
       const hashedPassword = await bcrypt.hash(newpassword, 10);
-      pool.run(
+      pool.query(
         "UPDATE usuarios SET senha = ? WHERE id = ?",
         [hashedPassword, userId],
         (updateErr) => {
@@ -99,8 +99,6 @@ exports.verifyEmailCode = (req, res) => {
   const { newemail, code } = req.body;
 
   const normalizedEmail = newemail.trim().toLowerCase();
-  console.log("Verificando código para o email:", normalizedEmail);
-  console.log("Map de códigos de verificação:", verificationCodes);
 
   const storedCode = verificationCodes.get(normalizedEmail); 
   if (!storedCode) {
@@ -118,7 +116,7 @@ exports.verifyEmailCode = (req, res) => {
   const userId = req.user.id;
   const query = `UPDATE usuarios SET email = ? WHERE id = ?`;
 
-  pool.run(query, [normalizedEmail, userId], function (err) {
+  pool.query(query, [normalizedEmail, userId], function (err) {
     if (err) {
       console.error("Erro ao atualizar o e-mail:", err);
       return res.status(500).json({ error: "Erro ao atualizar o e-mail no banco de dados." });

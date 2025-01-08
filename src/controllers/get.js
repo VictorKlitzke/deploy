@@ -4,7 +4,7 @@ exports.getuser = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    pool.all('SELECT * FROM usuarios WHERE id = ?', [userId], (err, rows) => {
+    pool.query('SELECT * FROM usuarios WHERE id = ?', [userId], (err, rows) => {
       if (err) {
         return res.status(500).json({ message: 'Erro ao consultar clientes', error: err.message });
       }
@@ -21,7 +21,7 @@ exports.getCategorys = (req, res) => {
   try {
     const userId = req.user.id;
 
-    pool.all('SELECT * FROM categorias WHERE usuario_id = ?', [userId], (err, rows) => {
+    pool.query('SELECT * FROM categorias WHERE usuario_id = ?', [userId], (err, rows) => {
       if (err) {
         console.error('Erro na consulta:', err);
         return res.status(500).json({ message: 'Erro interno no servidor', error: err.message });
@@ -43,7 +43,7 @@ exports.getAccounts = (req, res) => {
   try {
     const userId = req.user.id;
 
-    pool.all('SELECT id, nome, saldo_inicial FROM contas WHERE usuario_id = ?', [userId], (err, result) => {
+    pool.query('SELECT id, nome, saldo_inicial FROM contas WHERE usuario_id = ?', [userId], (err, result) => {
       if (err) {
         console.error('Erro na consulta:', err);
         return res.status(500).json({ message: 'Erro interno no servidor', error: err.message });
@@ -61,7 +61,7 @@ exports.getAccounts = (req, res) => {
 exports.getTransition = (req, res) => {
   const userId = req.user.id;
   try {
-    pool.all('SELECT * FROM transacoes WHERE usuario_id = ?', [userId], (err, result) => {
+    pool.query('SELECT * FROM transacoes WHERE usuario_id = ?', [userId], (err, result) => {
       if (err) {
         console.error('Erro na consulta:', err);
         return res.status(500).json({ message: 'Erro interno no servidor', error: err.message });

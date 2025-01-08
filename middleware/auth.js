@@ -17,7 +17,7 @@ module.exports = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.TOKEN);
     const userId = decoded.id;
     
-    pool.get('SELECT * FROM usuarios WHERE id = ?', [userId], (err, user) => {
+    pool.query('SELECT * FROM usuarios WHERE id = ?', [userId], (err, user) => {
       if (err) {
         console.error('[AVISO] - ERRO AO CONSULTAR USUÁRIO:', err);
         return res.status(500).json({ message: '[AVISO] - ERRO INTERNO DO SERVIDOR' });

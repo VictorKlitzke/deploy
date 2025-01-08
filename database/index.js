@@ -1,14 +1,21 @@
-const sqllite3 = require('sqlite3').verbose();   
-const path = require('path');
+const { Pool } = require('pg');   
+require("dotenv").config();
 
-const dbPath = path.resolve(__dirname, './financas.db');
+const pool = new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,   
+    database: process.env.DB_DATABASE,
+    password: process.env.DB_PASSWORD, 
+    port: process.env.DB_PORT,  
+})
 
-const pool = new sqllite3.Database(dbPath, (err) => {
+pool.connect((err, client, release ) => {
     if (err) {
-        console.error("Erro ao conectar ao banco de dados SQLite:", err.message);
+        console.error('Erro ao conectar ao banco de dados PostgreSQL:', err.stack);
     } else {
-        console.log("Conectado ao banco de dados SQLite com sucesso!");
+        console.log('Conectado ao banco de dados PostgreSQL com sucesso!');
+        release(); 
     }
-});
+})
 
 module.exports = pool

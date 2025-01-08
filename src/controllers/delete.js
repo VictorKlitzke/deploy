@@ -14,7 +14,7 @@ exports.deleteAccounts = (req, res) => {
   }
 
   try {
-    pool.run(
+    pool.query(
         "DELETE FROM contas WHERE id = ? AND usuario_id = ?",
         [index, userId],
         (deleteErr) => {
@@ -46,7 +46,7 @@ exports.deletecategory = (req, res) => {
   }
 
   try {
-    pool.run(
+    pool.query(
       "DELETE FROM categorias WHERE id = ? AND usuario_id = ?",
       [index, userId],
       (deleteErr) => {
@@ -76,7 +76,7 @@ exports.deletetransacao = (req, res) => {
   }
 
   try {
-    pool.run(
+    pool.query(
       "DELETE FROM transacoes WHERE id = ? AND usuario_id = ?",
       [index, userId],
       (deleteErr) => {

@@ -8,7 +8,7 @@ exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        pool.get("SELECT * FROM usuarios WHERE nome = ?", [username], async (err, user) => {
+        pool.query("SELECT * FROM usuarios WHERE nome = ?", [username], async (err, user) => {
             if (err) {
                 console.error("Erro na consulta ao banco:", err.message);
                 return res.status(500).json({ error: "Erro interno no servidor" });
@@ -71,10 +71,18 @@ exports.register = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        const stmt = pool.prepare('INSERT INTO usuarios (nome, email, senha, ativo) VALUES (?, ?, ?, ?)');
-        const result = stmt.run(name, email, hashedPassword, ativo);
+        pool.query(
+            'INSERT INTO usuarios (nome, email, senha, ativo) VALUES ($1, $2, $3, $4) RETURNING id',
+            [name, email, hashedPassword, ativo],
+            (err, result) => {
+                if (err) {
+                    console.error('Erro ao inserir o usuário:', err.message);
+                    return res.status(500).json({ error: 'Erro ao criar o usuário.' });
+                }
 
-        return res.status(201).json({ message: 'Usuário criado com sucesso!' });
+                return res.status(201).json({ message: 'Usuário criado com sucesso!', userId: result.rows[0].id });
+            }
+        );
 
     } catch (error) {
         console.error("Erro ao registrar usuário:", error.message);
@@ -94,15 +102,21 @@ exports.registerCategory = (req, res) => {
     }
     try {
 
-        const existCategories = pool.get('SELECT * FROM categorias WHERE nome = ? AND usuario_id = ?', [category, userId]);
+        const existCategories = pool.query('SELECT * FROM categorias WHERE nome = ? AND usuario_id = ?', [category, userId]);
         if (!existCategories) {
             return res.status(400).json({ error: 'Essa categoria já existe para esse usuário' });
         }
 
-        const stmt = pool.prepare('INSERT INTO categorias (nome, tipo, usuario_id) VALUES (?, ?, ?)');
-        const result = stmt.run(category, type, userId);
-
-        return res.status(201).json({ message: 'Categoria criado com sucesso!' });
+        pool.query('INSERT INTO categorias (nome, tipo, usuario_id) VALUES (?, ?, ?)',
+            [category, type, userId],
+            (err, result) => {
+                if (err) {
+                    console.error('Erro ao inserir categoria:', err.message);
+                    return res.status(500).json({ error: 'Erro ao criar cateegoria.' });
+                }
+                return res.status(201).json({ message: 'Categoria criado com sucesso!', userId: result.rows[0].id });
+            }
+        )
 
     } catch (error) {
         console.error("Erro ao registrar categoria do usuario:", error.message);
@@ -122,15 +136,21 @@ exports.registerAccounts = (req, res) => {
     }
     try {
 
-        const existCategories = pool.get('SELECT * FROM contas WHERE nome = ? AND usuario_id = ?', [account, userId]);
+        const existCategories = pool.query('SELECT * FROM contas WHERE nome = ? AND usuario_id = ?', [account, userId]);
         if (!existCategories) {
             return res.status(400).json({ error: 'Essa contas já existe para esse usuário' });
         }
 
-        const stmt = pool.prepare('INSERT INTO contas (nome, saldo_inicial, usuario_id) VALUES (?, ?, ?)');
-        const result = stmt.run(account, balance, userId);
+        pool.query('INSERT INTO contas (nome, saldo_inicial, usuario_id) VALUES (?, ?, ?)',
+            [account, balance, userId],
+            (err, result) => {
+                if (err) {
+                    return res.status(500).json({ message: 'Erro ao criar conta' });
 
-        return res.status(201).json({ message: 'Conta criada com sucesso!' });
+                }
+                return res.status(201).json({ message: 'Conta criada com sucesso!' });
+            }
+        )
 
     } catch (error) {
         console.error("Erro ao registrar conta do usuario:", error.message);
@@ -140,7 +160,7 @@ exports.registerAccounts = (req, res) => {
 
 exports.registerExpense = (req, res) => {
     const { expense } = req.body;
-    
+
     const { categoria_id, conta_id, valor, tipo, descricao, data_transacao } = expense;
     const userId = req.user.id;
 
@@ -151,33 +171,34 @@ exports.registerExpense = (req, res) => {
         return res.status(400).json({ error: 'ID do usuário não encontrado!' });
     }
     try {
+        (async () => {
+            const insertQuery = `
+                    INSERT INTO transacoes (categoria_id, conta_id, valor, tipo, descricao, usuario_id, data_transacao) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+                `;
+            const insertResult = await pool.query(insertQuery, [categoria_id, conta_id, valor, tipo, descricao, userId, data_transacao]);
 
-        const stmt = pool.prepare(`
-            INSERT INTO transacoes (categoria_id, conta_id, valor, tipo, descricao, usuario_id, data_transacao) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
+            let updateQuery;
+            if (tipo === 'Saída') {
+                updateQuery = `
+                        UPDATE contas 
+                        SET saldo_inicial = saldo_inicial - $1 
+                        WHERE id = $2
+                    `;
+            } else if (tipo === 'Entrada') {
+                updateQuery = `
+                        UPDATE contas 
+                        SET saldo_inicial = saldo_inicial + $1 
+                        WHERE id = $2
+                    `;
+            } else {
+                return res.status(500).json({ message: 'Erro ao atualizar a tabela de transações' });
+            }
 
-        const result = stmt.run(categoria_id, conta_id, valor, tipo, descricao, userId, data_transacao);
+            await pool.query(updateQuery, [valor, conta_id]);
 
-        if (tipo === 'Saída') {
-            const stmt1 = pool.prepare(`
-                UPDATE contas 
-                SET saldo_inicial = saldo_inicial - ? 
-                WHERE id = ?
-            `);
-            const result1 = stmt1.run(valor.trim(), conta_id);
-        } else if (tipo === 'Entrada') {
-            const stmt1 = pool.prepare(`
-                UPDATE contas 
-                SET saldo_inicial = saldo_inicial + ? 
-                WHERE id = ?
-            `);
-            const result1 = stmt1.run(valor.trim(), conta_id);
-        } else {
-            return res.status(500).json({ message: 'Erro ao atualizar a tabela de transacoes' });
-        }
-
-        return res.status(201).json({ message: 'transação criada com sucesso!' });
+            return res.status(201).json({ message: 'Transação criada com sucesso!', transacaoId: insertResult.rows[0].id });
+        })();
 
     } catch (error) {
         console.error("Erro ao registrar conta do usuario:", error.message);
